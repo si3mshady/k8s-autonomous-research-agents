@@ -40,13 +40,14 @@ resources:
 # -----------------------------------------------------------------------------
 #
 #
-# 
+#
+
 image:
   agent:
-    repository: "si3mshady/fde-research-agent:latest"
+    repository: "si3mshady/fde-research-agent"
     tag: "latest"
   ui:
-    repository: "si3mshady/fde-research-ui:latest"
+    repository: "si3mshady/fde-research-ui"
     tag: "latest"
   pullPolicy: Always
 
