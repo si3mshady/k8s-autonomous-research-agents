@@ -26,17 +26,22 @@ spec:
           limits:
             memory: "200Mi"
             cpu: "250m"
-            
-        # CONFIGURATION: Injects values from values.yaml via the ConfigMap
+
+        # INJECTS THE DYNAMIC TENANT ARRAY AS JSON FOR THE WORKER
+        env:
+        - name: TENANTS_JSON
+          value: {{ .Values.tenants | toJson | quote }}
+
+        # CONFIGURATION: Injects remaining plain environment variables
         envFrom:
         - configMapRef:
             name: {{ .Release.Name }}-config
-            
+
         # STORAGE: Connects to the host-shared SQLite database
         volumeMounts:
         - name: shared-db
           mountPath: /app/data
-          
+
       volumes:
       - name: shared-db
         hostPath:

@@ -2,11 +2,11 @@
 # TENANT IDENTITY & MISSION
 # This section defines who the agent works for and what it is looking for.
 # -----------------------------------------------------------------------------
-tenant:
-  id: "stem-shady-llc"
-  companyName: "STEMshady LLC"
-  researchTopic: "Name grants for drone STEM education."
-  systemPrompt: "You are a strict data extractor. Analyze the provided text. Return ONLY the name of ONE grant and a single-sentence summary. Do not output anything else. Maximum length: 30 words."
+tenants:
+  - id: "stem-shady-llc"
+    name: "STEMshady LLC"
+    topic: "Name grants for drone STEM education."
+    systemPrompt: "You are a strict data extractor. Analyze t:he provided text. Return ONLY the name of ONE grant and a single-sentence summary. Do not output anything else. Maximum length: 30 words."
 # -----------------------------------------------------------------------------
 # ENVIRONMENT & API CONNECTIONS
 # -----------------------------------------------------------------------------
