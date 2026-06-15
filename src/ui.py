@@ -3,7 +3,6 @@ import sqlite3
 import pandas as pd
 import streamlit as st
 
-# Path configuration matches worker.py exactly
 DB_PATH = os.getenv("DB_PATH", "/app/data/fde_platform.db")
 
 st.set_page_config(
@@ -12,8 +11,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- NATIVE THEME & STRUCTURAL OVERRIDES ---
-# Using strict styling format to prevent text leaking and ensure full browser hydration
+# --- CINEMATIC CYBERPUNK THEME INJECTION ---
 st.markdown("""
     <style>
         .stApp { 
@@ -26,33 +24,26 @@ st.markdown("""
         }
         h1, h2, h3 { 
             color: #66fcf1 !important; 
+            font-family: 'Courier New', Courier, monospace;
         }
-        /* Custom CSS to replace broken dynamic st.metric widgets */
-        .kpi-container {
-            display: flex; 
-            gap: 15px; 
-            margin-bottom: 25px;
-            width: 100%;
+        /* Presentable metrics cards avoiding dynamic script modules */
+        .kpi-wrapper {
+            display: flex; gap: 15px; margin-bottom: 25px; width: 100%;
         }
-        .kpi-card {
-            flex: 1; 
-            background-color: #1f2833; 
-            border: 1px solid #45a29e; 
-            padding: 15px; 
-            border-radius: 6px; 
-            text-align: left;
+        .kpi-box {
+            flex: 1; background-color: #1f2833; border: 1px solid #45a29e; 
+            padding: 18px; border-radius: 6px; box-shadow: 0px 4px 10px rgba(0,0,0,0.3);
         }
-        .kpi-label {
-            color: #c5c6c7; 
-            font-size: 13px; 
-            text-transform: uppercase; 
-            letter-spacing: 0.5px;
+        .kpi-lbl { color: #a8b2bd; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
+        .kpi-val { color: #66fcf1; font-size: 28px; font-weight: bold; margin-top: 4px; }
+        
+        /* Tactical Dashboard Scratchpad Layout */
+        .scratchpad-container {
+            background-color: #0f141c; border-left: 3px solid #66fcf1;
+            padding: 15px; border-radius: 4px; margin-top: 10px; margin-bottom: 15px;
         }
-        .kpi-value {
-            color: #66fcf1; 
-            font-size: 26px; 
-            font-weight: bold; 
-            margin-top: 5px;
+        .scratchpad-title {
+            color: #66fcf1; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -60,9 +51,7 @@ st.markdown("""
 st.title("🌐 Multi-Tenant Research Operational Control Plane")
 st.caption("Synchronized GitOps Core Engine — Active AI Agent Monitoring")
 
-
-# --- DATA ENGINE READ UTIL ---
-@st.cache_data(ttl=10) # Cache for 10 seconds for operational performance
+@st.cache_data(ttl=5)
 def load_platform_data():
     if not os.path.exists(DB_PATH):
         return pd.DataFrame()
@@ -73,90 +62,84 @@ def load_platform_data():
         conn.close()
         return df
     except Exception as e:
-        st.error(f"Database connection error: {e}")
         return pd.DataFrame()
 
-
-# --- APP RUNTIME EXECUTION ---
+# Execution Load
 data_frame = load_platform_data()
 
-# Refresh Trigger Button
-if st.sidebar.button("🔄 Refresh Intelligence Data"):
+# Sidebar Controls
+if st.sidebar.button("🔄 Refresh Intelligence Pipeline"):
     st.rerun()
 
 if data_frame.empty:
-    st.warning("⚠️ No records detected. The agent may still be in its initial 'thinking' or 'searching' phase. Check the pod logs.")
+    st.warning("⚠️ No synchronized intelligence logs detected inside fde_platform.db. Run your worker node to seed metrics data.")
 else:
-    # Sidebar Filtering Controls
+    # Sidebar Tenant Selection
     available_tenants = data_frame['company_name'].unique()
-    st.sidebar.header("🛠️ Tenant Navigation Filters")
+    st.sidebar.markdown("---")
+    st.sidebar.header("🛠️ Operational Nav Filters")
     selected_filter = st.sidebar.selectbox("Choose Target Portfolio Company", ["View System-Wide Data"] + list(available_tenants))
     
     filtered_df = data_frame if selected_filter == "View System-Wide Data" else data_frame[data_frame['company_name'] == selected_filter]
 
-    # Metrics Layout Engine - Built via raw HTML cards to bypass flaking proxy module chunks
-    active_fleets = len(data_frame['tenant_id'].unique())
-    total_records = len(filtered_df)
-    financial_leads = len(filtered_df[filtered_df['estimated_value'] != 'Unknown'])
+    # Render Native Metrics Block
+    total_tenants = len(data_frame['tenant_id'].unique())
+    total_leads = len(filtered_df)
+    active_reviews = len(filtered_df[filtered_df['deadline_or_milestone'].str.contains('Review', na=False)])
 
     st.markdown(f"""
-        <div class="kpi-container">
-            <div class="kpi-card">
-                <div class="kpi-label">Active Tenant Fleets</div>
-                <div class="kpi-value">{active_fleets}</div>
+        <div class="kpi-wrapper">
+            <div class="kpi-box">
+                <div class="kpi-lbl">Monitored Portfolio Fleets</div>
+                <div class="kpi-value">{total_tenants} Tenants</div>
             </div>
-            <div class="kpi-card">
-                <div class="kpi-label">Total Intelligence Records</div>
-                <div class="kpi-value">{total_records}</div>
+            <div class="kpi-box">
+                <div class="kpi-lbl">Synchronized Records ({selected_filter})</div>
+                <div class="kpi-value">{total_leads} Items</div>
             </div>
-            <div class="kpi-card">
-                <div class="kpi-label">Qualified Opportunities</div>
-                <div class="kpi-value">{financial_leads}</div>
+            <div class="kpi-box">
+                <div class="kpi-lbl">Active Review Targets</div>
+                <div class="kpi-value">{active_reviews} Pending</div>
             </div>
         </div>
     """, unsafe_allow_html=True)
 
     st.markdown("---")
-    st.subheader(f"📋 Found Leads: {selected_filter}")
+    st.subheader(f"📋 Live Intelligence Matrix: {selected_filter}")
 
-    # Render Record Iterations
+    # Render Streamlined Presentation Cards
     for index, row in filtered_df.iterrows():
-        # Intercept formatting exceptions from the LLM worker process dynamically
-        is_parsing_failure = (
-            str(row['lead_name']).strip().lower() == "error" or 
-            "parsing failed" in str(row['summary']).lower()
-        )
-        
         with st.container(border=True):
-            if is_parsing_failure:
-                # Degrading gracefully into a pipeline tracking notification panel
-                st.info("🔄 **Intelligence Pipeline: Syncing live schema structures from source data...**")
-                st.markdown(f"**Tenant ID:** `{row['tenant_id']}` | **Topic Target:** *{row['research_topic']}*")
-                
-                # Still show what research data tavily captured so it's transparent
-                with st.expander("🔍 Examine Raw Intelligence Payload Stream"):
-                    st.code(row['raw_payload'], language='json')
-                    st.caption(f"Capture Phase Timestamp: {row['extracted_at']}")
-            else:
-                # Render beautifully formatted cards for clean executions
-                header_col, meta_col = st.columns([3, 1])
-                with header_col:
-                    st.markdown(f"### 🎯 {row['lead_name']}")
-                    st.markdown(f"**Tenant ID:** `{row['tenant_id']}` | **Company:** *{row['company_name']}*")
-                    st.markdown(f"**Topic:** {row['research_topic']}")
-                with meta_col:
-                    # Individual item sub-metrics handled with robust HTML injection
-                    st.markdown(f"""
-                        <div style="background-color: #1f2833; padding: 10px; border-radius: 4px; border: 1px solid #45a29e; margin-bottom: 5px;">
-                            <div style="font-size: 11px; color: #c5c6c7; text-transform: uppercase;">Value Projection</div>
-                            <div style="font-size: 18px; color: #66fcf1; font-weight: bold;">{row['estimated_value']}</div>
-                        </div>
-                    """, unsafe_allow_html=True)
-                    st.caption(f"📅 **Deadline:** {row['deadline_or_milestone']}")
+            col_main, col_metrics = st.columns([3, 1])
+            
+            with col_main:
+                st.markdown(f"### 🎯 {row['lead_name']}")
+                st.markdown(f"**Tenant Domain ID:** `{row['tenant_id']}` | **Asset Topic:** *{row['research_topic']}*")
+            
+            with col_metrics:
+                # Value and Deadline tags rendered clearly with static custom boxes
+                st.markdown(f"""
+                    <div style="background-color: #1f2833; padding: 10px; border-radius: 4px; border: 1px solid #45a29e; text-align: center;">
+                        <span style="font-size: 10px; color: #a8b2bd; text-transform: uppercase;">Value Projection</span><br>
+                        <span style="font-size: 16px; color: #66fcf1; font-weight: bold;">{row['estimated_value']}</span>
+                    </div>
+                    <div style="margin-top: 5px; font-size: 12px; color: #66fcf1; text-align: center; font-weight: bold;">
+                        ⏱️ {row['deadline_or_milestone']}
+                    </div>
+                """, unsafe_allow_html=True)
 
-                st.write(f"**Executive Synthesis:** {row['summary']}")
-                st.write(f"**Action Plan:** {row['actionable_plan']}")
-                
-                with st.expander("🔍 Examine Raw Intelligence Payload Stream"):
-                    st.code(row['raw_payload'], language='json')
-                    st.caption(f"Data Captured: {row['extracted_at']}")
+            # Core Synthesis Text Box
+            st.markdown(f"**Strategic Executive Summary:** {row['summary']}")
+            
+            # The Scratchpad / Non-Profit Alignment Analysis Display Box
+            st.markdown(f"""
+                <div class="scratchpad-container">
+                    <div class="scratchpad-title">💡 LLM Live Scratchpad — Non-Profit Core Alignment Analysis</div>
+                    <div style="font-size: 13px; color: #c5c6c7; line-height: 1.5;">{row['actionable_plan']}</div>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            # Nested Clean Raw Code Expander
+            with st.expander("🔍 Examine Raw Natural Tavily Payload"):
+                st.caption(f"Payload Sync Timestamp: {row['extracted_at']}")
+                st.code(row['raw_payload'], language='json')
