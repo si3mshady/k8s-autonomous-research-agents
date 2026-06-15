@@ -5,9 +5,8 @@
 tenant:
   id: "stem-drone-org"
   companyName: "STEM Drone Youth Program"
-  researchTopic: "drone robotics youth education grants"
-  systemPrompt: "Find active grants, corporate sponsorships, and high-net-worth individuals interested in funding youth STEM programs. Focus on drone technology."
-
+  researchTopic: "Name 1 active 2024 grant for youth drone STEM education."
+  systemPrompt: "You are a strict data extractor. Analyze the provided text. Return ONLY the name of ONE grant and a single-sentence summary. Do not output anything else. Maximum length: 30 words."
 # -----------------------------------------------------------------------------
 # ENVIRONMENT & API CONNECTIONS
 # -----------------------------------------------------------------------------
