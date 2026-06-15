@@ -9,3 +9,4 @@ data:
   SYSTEM_PROMPT: {{ .Values.tenant.systemPrompt | quote }}
   OLLAMA_BASE_URL: {{ .Values.env.ollamaUrl | quote }}
   DB_PATH: {{ .Values.env.dbPath | quote }}
+  TAVILY_API_KEY: {{ .Values.env.tavilyApiKey | quote }}
