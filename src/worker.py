@@ -1,29 +1,27 @@
 import os
 import json
-import time
+import sys
 import sqlite3
 from datetime import datetime
 import requests
 from langchain_ollama import ChatOllama
 
-# --- CONFIGURATION MATCHES PLATFORM BASES ---
+# --- CONFIGURATION FROM ENVIRONMENT & HELM ---
 DB_PATH = os.getenv("DB_PATH", "/app/data/fde_platform.db")
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "https://4f1c-67-44-192-47.ngrok-free.app")
-TAVILY_API_KEY = os.getenv("TAVILY_API_KEY", "your_tavily_api_key_here")
+TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
 
-# Sample Multi-Tenant Portfolio Registry
-TENANTS = [
-    {
-        "id": "stem-drone-org",
-        "name": "STEM Drone Youth Program",
-        "topic": "Drone STEM education funding and grants"
-    },
-    {
-        "id": "clean-water-fleet",
-        "name": "EcoAqua Automation",
-        "topic": "Remote sensing water conservation grants"
-    }
-]
+# Safely extract and parse dynamic tenant topology from Helm env injection
+TENANTS_JSON_STR = os.getenv("TENANTS_JSON", "[]")
+try:
+    TENANTS = json.loads(TENANTS_JSON_STR)
+    if not TENANTS:
+        print("ERROR: Dynamic TENANTS array is empty. Verify your Helm values.yaml structure.")
+        sys.exit(1)
+except Exception as json_err:
+    print(f"FATAL: Failed to parse Helm TENANTS_JSON payload. Raw content: {TENANTS_JSON_STR}. Error: {json_err}")
+    sys.exit(1)
+
 
 def init_db():
     conn = sqlite3.connect(DB_PATH)
@@ -47,7 +45,12 @@ def init_db():
     conn.close()
 
 def query_tavily(query: str):
-    """Hits Tavily search API natively to grab clean context."""
+    """Hits Tavily search API natively to grab clean context with verbose logging."""
+    print(f"-> Initiating Tavily outbound request: '{query}'")
+    if not TAVILY_API_KEY:
+        print("CRITICAL: TAVILY_API_KEY environment variable is missing.")
+        return []
+        
     url = "https://api.tavily.com/search"
     payload = {
         "api_key": TAVILY_API_KEY,
@@ -57,20 +60,25 @@ def query_tavily(query: str):
     }
     try:
         response = requests.post(url, json=payload, timeout=15)
+        print(f"<- Tavily response received. HTTP Status: {response.status_code}")
+        
         if response.status_code == 200:
-            return response.json().get("results", [])
+            results = response.json().get("results", [])
+            print(f"   Successfully retrieved {len(results)} search documents.")
+            return results
+        else:
+            print(f"   ERROR: Tavily API returned non-200 body: {response.text}")
     except Exception as e:
-        print(f"Tavily search error: {e}")
+        print(f"   EXCEPTION: Network failure during Tavily call: {e}")
     return []
 
 def synthesize_with_llm(tenant_name, topic, raw_payload_str):
     """Uses native Ollama JSON mode to safely guarantee output structure."""
-    # Instantiating base runner with strict JSON formatting engine active
     llm = ChatOllama(
         base_url=OLLAMA_BASE_URL,
         model="qwen3.5:0.8b",
         temperature=0.3,
-        format="json" # <--- Forces engine level constraint to output ONLY valid JSON
+        format="json"
     )
 
     system_prompt = f"""
@@ -96,7 +104,6 @@ def synthesize_with_llm(tenant_name, topic, raw_payload_str):
         return parsed_data
     except Exception as e:
         print(f"LLM Processing Exception, generating safe fallback: {e}")
-        # Always return a clean structured dictionary to prevent UI crashes
         return {
             "lead_name": f"Opportunity for {tenant_name}",
             "estimated_value": "Under Evaluation",
@@ -106,34 +113,28 @@ def synthesize_with_llm(tenant_name, topic, raw_payload_str):
         }
 
 def run_pipeline_cycle():
-    print(f"[{datetime.now()}] Initializing dual-search pipeline cycle across portfolio tenants...")
+    print(f"[{datetime.now()}] Initializing dual-search pipeline cycle across {len(TENANTS)} dynamic Helm portfolio tenants...")
     init_db()
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
     for tenant in TENANTS:
-        print(f"Processing tenant: {tenant['name']}")
+        print(f"Processing Dynamic Tenant: {tenant['name']} [{tenant['id']}]")
         
-        # 1. Execute Search Query #1 (General Target)
         q1 = f"Name open grants for {tenant['topic']} 2026"
         res1 = query_tavily(q1)
         
-        # 2. Execute Search Query #2 (Foundational/Corporate Target)
         q2 = f"Corporate foundation partnerships for {tenant['topic']}"
         res2 = query_tavily(q2)
         
-        # Combine searches into a single concise array
         combined_results = res1 + res2
         if not combined_results:
-            print(f"Skipping cycle for {tenant['name']}: No internet data collected.")
+            print(f"❌ Skipping cycle for {tenant['name']}: Combined search payload is empty.")
             continue
             
         raw_payload_string = json.dumps(combined_results)
-
-        # 3. Process naturally structured data via Ollama
         intelligence = synthesize_with_llm(tenant['name'], tenant['topic'], raw_payload_string)
 
-        # 4. Sync into Multi-Tenant Operational Data Warehouse
         cursor.execute("""
             INSERT INTO tenant_research_leads 
             (tenant_id, company_name, research_topic, lead_name, estimated_value, deadline_or_milestone, summary, actionable_plan, raw_payload, extracted_at)
@@ -151,11 +152,10 @@ def run_pipeline_cycle():
             datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         ))
         conn.commit()
-        print(f"Successfully committed intelligence pipeline data for {tenant['name']}.")
+        print(f"Successfully committed dynamic core intelligence payload for {tenant['name']}.")
 
     conn.close()
-    print("Cycle completed. Sleeping for 1 hour...")
+    print("Cycle completed. Pipeline in standby...")
 
 if __name__ == "__main__":
-    # Run an immediate execution loop on startup
     run_pipeline_cycle()
