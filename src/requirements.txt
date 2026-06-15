@@ -1,0 +1,7 @@
+requests>=2.31.0
+tavily-python>=0.3.3
+langchain-core>=0.1.52
+langchain-community>=0.0.38
+langgraph>=0.0.39
+streamlit>=1.32.2
+pandas>=2.2.1

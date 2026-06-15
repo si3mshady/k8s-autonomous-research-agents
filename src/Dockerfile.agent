@@ -1,0 +1,19 @@
+# Use a lightweight Python base image
+FROM python:3.11-slim
+
+# Set the working directory
+WORKDIR /app
+
+# Copy dependencies and install them
+# --no-cache-dir keeps the final image size small
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the agent script
+COPY worker.py .
+
+# Create the data directory for the SQLite volume mount
+RUN mkdir -p /app/data
+
+# Run the agent in unbuffered mode for real-time Kubernetes logging
+CMD ["python", "-u", "worker.py"]

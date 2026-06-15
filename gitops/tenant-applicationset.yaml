@@ -1,0 +1,40 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: research-agent-fleet
+  namespace: argocd
+spec:
+  # The Git Generator scans the repo and triggers a deployment 
+  # for every sub-directory it finds inside the 'charts/' folder.
+  generators:
+  - git:
+      repoURL: 'https://github.com/si3mshady/k8s-autonomous-research-agents.git'
+      revision: HEAD
+      directories:
+      - path: charts/*
+  
+  template:
+    metadata:
+      # Automatically names the Argo CD app based on the tenant's folder name
+      name: '{{path.basename}}-agent' 
+    spec:
+      project: default
+      source:
+        repoURL: 'https://github.com/si3mshady/k8s-autonomous-research-agents.git'
+        targetRevision: HEAD
+        # Points Argo CD to the specific tenant's Helm chart directory
+        path: '{{path}}' 
+        helm:
+          valueFiles:
+            - values.yaml
+      destination:
+        server: 'https://kubernetes.default.svc'
+        # Automatically isolates the tenant in their own Kubernetes namespace
+        namespace: '{{path.basename}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          # Crucial: Tells Argo CD to build the namespace if it doesn't exist
+          - CreateNamespace=true
