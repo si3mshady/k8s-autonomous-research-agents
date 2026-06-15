@@ -38,6 +38,18 @@ resources:
 # KUBERNETES NETWORKING (Boilerplate)
 # Kept here so Helm doesn't throw a "nil pointer" error on older templates
 # -----------------------------------------------------------------------------
+#
+#
+# 
+image:
+  agent:
+    repository: "your-dockerhub-username/fde-research-agent"
+    tag: "latest"
+  ui:
+    repository: "your-dockerhub-username/fde-research-ui"
+    tag: "latest"
+  pullPolicy: Always
+
 service:
   type: ClusterIP
   port: 80

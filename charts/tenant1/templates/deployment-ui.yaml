@@ -15,10 +15,9 @@ spec:
         app: {{ .Release.Name }}
     spec:
       containers:
-      - name: research-agent
-        # Ensure you push your image to your DockerHub first
-        image: your-dockerhub-username/fde-research-agent:latest
-        imagePullPolicy: Always
+      - name: research-ui
+        image: "{{ .Values.image.ui.repository }}:{{ .Values.image.ui.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
         
         resources:
           requests:
