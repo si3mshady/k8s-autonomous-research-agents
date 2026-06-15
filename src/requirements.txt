@@ -1,7 +1,9 @@
 requests>=2.31.0
 tavily-python>=0.3.3
-langchain-core>=0.1.52
-langchain-community>=0.0.38
-langgraph>=0.0.39
+pydantic>=2.7.0
+langchain-core>=0.3.0
+langchain-ollama>=0.2.0
+langchain-tavily>=0.1.0
+langgraph>=0.2.0
 streamlit>=1.32.2
 pandas>=2.2.1
