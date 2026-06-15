@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-config
+data:
+  TENANT_ID: {{ .Values.tenant.id | quote }}
+  COMPANY_NAME: {{ .Values.tenant.companyName | quote }}
+  RESEARCH_TOPIC: {{ .Values.tenant.researchTopic | quote }}
+  SYSTEM_PROMPT: {{ .Values.tenant.systemPrompt | quote }}
+  OLLAMA_BASE_URL: {{ .Values.env.ollamaUrl | quote }}
+  DB_PATH: {{ .Values.env.dbPath | quote }}

@@ -1,0 +1,46 @@
+# -----------------------------------------------------------------------------
+# TENANT IDENTITY & MISSION
+# This section defines who the agent works for and what it is looking for.
+# -----------------------------------------------------------------------------
+tenant:
+  id: "stem-drone-org"
+  companyName: "STEM Drone Youth Program"
+  researchTopic: "drone robotics youth education grants"
+  systemPrompt: "Find active grants, corporate sponsorships, and high-net-worth individuals interested in funding youth STEM programs. Focus on drone technology."
+
+# -----------------------------------------------------------------------------
+# ENVIRONMENT & API CONNECTIONS
+# -----------------------------------------------------------------------------
+env:
+  # Your Tavily API key for web search capabilities
+  tavilyApiKey: "YOUR_TAVILY_API_KEY_HERE"
+  
+  # The endpoint for your locally hosted Ollama model.
+  # Use http://host.docker.internal:11434 if using Docker Desktop / K3d on Mac/Windows
+  # Use http://172.28.240.1:11434 based on your previous curl test if on WSL/custom network
+  ollamaUrl: "http://172.28.240.1:11434"
+  
+  # The shared database path inside the container
+  dbPath: "/app/data/fde_platform.db"
+
+# -----------------------------------------------------------------------------
+# HARDWARE CONSTRAINTS (CRITICAL FOR YOUR 4GB LAPTOP)
+# -----------------------------------------------------------------------------
+resources:
+  requests:
+    memory: "100Mi"    # Baseline memory footprint
+    cpu: "100m"        # 1/10th of a CPU core
+  limits:
+    memory: "200Mi"    # Hard kill-switch if the Python script leaks memory
+    cpu: "250m"        # 1/4th of a CPU core maximum
+
+# -----------------------------------------------------------------------------
+# KUBERNETES NETWORKING (Boilerplate)
+# Kept here so Helm doesn't throw a "nil pointer" error on older templates
+# -----------------------------------------------------------------------------
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: false
