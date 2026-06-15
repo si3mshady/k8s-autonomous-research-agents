@@ -88,12 +88,13 @@ base_llm = ChatOllama(
     model="qwen3.5:0.8b",
     temperature=0.2,
     request_timeout=300.0, 
-    num_predict=220
+    num_predict=220,
+    format="json"
 )
 
 # Enforcing structural guarantees using native JSON schemas
-structured_query_llm = base_llm.with_structured_output(SearchQueryOutput, method="json_schema")
-structured_lead_llm = base_llm.with_structured_output(StructuredLeadOutput, method="json_schema")
+structured_query_llm = base_llm.with_structured_output(SearchQueryOutput, method="json")
+structured_lead_llm = base_llm.with_structured_output(StructuredLeadOutput, method="json")
 
 # Standardized Tavily tool instantiation
 tavily_tool = TavilySearch(
