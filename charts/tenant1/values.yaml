@@ -13,7 +13,7 @@ tenant:
 # -----------------------------------------------------------------------------
 env:
   # Your Tavily API key for web search capabilities
-  tavilyApiKey: "YOUR_TAVILY_API_KEY_HERE"
+  tavilyApiKey: "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"
   
   # The endpoint for your locally hosted Ollama model.
   # Use http://host.docker.internal:11434 if using Docker Desktop / K3d on Mac/Windows
@@ -43,10 +43,10 @@ resources:
 # 
 image:
   agent:
-    repository: "your-dockerhub-username/fde-research-agent"
+    repository: "si3mshady/fde-research-agent:latest"
     tag: "latest"
   ui:
-    repository: "your-dockerhub-username/fde-research-ui"
+    repository: "si3mshady/fde-research-ui:latest"
     tag: "latest"
   pullPolicy: Always
 
