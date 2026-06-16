@@ -20,7 +20,7 @@ st.markdown("""
         [data-testid="stSidebar"] { background-color: #1f2833 !important; border-right: 1px solid #45a29e; }
         h1, h2, h3 { color: #66fcf1 !important; font-family: 'Courier New', Courier, monospace; }
         
-        /* Custom KPI Cards to avoid iframe/module import errors */
+        /* Custom KPI Cards */
         .kpi-container { display: flex; gap: 1rem; margin-bottom: 1.5rem; width: 100%; }
         .kpi-card { flex: 1; background-color: #1f2833; border: 1px solid #45a29e; padding: 1.2rem; border-radius: 0.5rem; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
         .kpi-label { color: #a8b2bd; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05rem; }
@@ -35,15 +35,35 @@ st.markdown("""
 st.title("🌐 Multi-Tenant Research Operational Control Plane")
 st.caption("Synchronized GitOps Core Engine — Active AI Agent Monitoring")
 
-# --- DATA LAYER ---
-@st.cache_data(ttl=5)
+# --- DATA LAYER (No caching to ensure real-time disk reads) ---
 def load_data():
     if not os.path.exists(DB_PATH):
+        st.error(f"🔴 DATABASE MISSING: The UI container cannot find any file at `{DB_PATH}`. Check your Kubernetes volume mounts.")
         return pd.DataFrame()
+    
     try:
+        # Check file size to see if it's an empty ghost file
+        file_size = os.path.getsize(DB_PATH)
+        if file_size == 0:
+            st.warning(f"⚠️ DATABASE EMPTY: The file at `{DB_PATH}` exists but has 0 bytes. The worker has not written data here.")
+            return pd.DataFrame()
+
         with sqlite3.connect(DB_PATH) as conn:
-            return pd.read_sql_query("SELECT * FROM tenant_research_leads ORDER BY extracted_at DESC", conn)
-    except Exception:
+            # Check if table exists before querying
+            cursor = conn.cursor()
+            cursor.execute("SELECT count(name) FROM sqlite_master WHERE type='table' AND name='tenant_research_leads'")
+            if cursor.fetchone()[0] == 0:
+                st.warning("⚠️ TABLE MISSING: The database exists, but the `tenant_research_leads` table has not been created yet.")
+                return pd.DataFrame()
+
+            df = pd.read_sql_query("SELECT * FROM tenant_research_leads ORDER BY extracted_at DESC", conn)
+            return df
+            
+    except sqlite3.OperationalError as e:
+        st.error(f"🔴 SQLITE READ ERROR: {e}. Check file permissions for the UI container.")
+        return pd.DataFrame()
+    except Exception as e:
+        st.error(f"🔴 UNEXPECTED ERROR fetching data: {e}")
         return pd.DataFrame()
 
 df = load_data()
@@ -53,7 +73,7 @@ if st.sidebar.button("🔄 Refresh Intelligence Pipeline"):
     st.rerun()
 
 if df.empty:
-    st.warning("⚠️ No synchronized intelligence logs detected in fde_platform.db. Run the worker node to seed initial pipeline payloads.")
+    st.info("Pipeline currently reports no synchronized intelligence logs. Waiting for Worker execution...")
 else:
     st.sidebar.markdown("---")
     st.sidebar.header("🛠️ Operational Nav Filters")
