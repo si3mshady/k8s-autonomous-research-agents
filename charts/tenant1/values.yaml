@@ -12,12 +12,12 @@ tenants:
 # -----------------------------------------------------------------------------
 env:
   # Your Tavily API key for web search capabilities
-  tavilyApiKey: "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"
+  tavilyApiKey: "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"
   
   # The endpoint for your locally hosted Ollama model.
   # Use http://host.docker.internal:11434 if using Docker Desktop / K3d on Mac/Windows
   # Use http://172.28.240.1:11434 based on your previous curl test if on WSL/custom network
-  ollamaUrl: "https://f3e0-162-225-15-24.ngrok-free.app"
+  ollamaUrl: "https://6ecc-162-225-15-24.ngrok-free.app"
   
   # The shared database path inside the container
   dbPath: "/app/data/fde_platform.db"
