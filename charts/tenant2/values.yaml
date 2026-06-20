@@ -1,0 +1,61 @@
+# -----------------------------------------------------------------------------
+# TENANT IDENTITY & MISSION
+# This section defines who the agent works for and what it is looking for.
+# -----------------------------------------------------------------------------
+tenants:
+  - id: "arnold-makers-innovation-foundation"
+    name: "Arnold Makers & Innovation Foundation"
+    topic: "Find grants for 3D printing, makerspaces, robotics, and community technology programs."
+    systemPrompt: "You are a strict data extractor. Analyze t:he provided text. Return ONLY the name of ONE grant and a single-sentence summary. Do not output anything else. Maximum length: 30 words."
+# -----------------------------------------------------------------------------
+# ENVIRONMENT & API CONNECTIONS
+# -----------------------------------------------------------------------------
+env:
+  # Your Tavily API key for web search capabilities
+  tavilyApiKey: "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"
+  
+  # The endpoint for your locally hosted Ollama model.
+  # Use http://host.docker.internal:11434 if using Docker Desktop / K3d on Mac/Windows
+  # Use http://172.28.240.1:11434 based on your previous curl test if on WSL/custom network
+  ollamaUrl: "https://6ecc-162-225-15-24.ngrok-free.app"
+  
+  # The shared database path inside the container
+  dbPath: "/app/data/fde_platform.db"
+
+# -----------------------------------------------------------------------------
+# HARDWARE CONSTRAINTS (CRITICAL FOR YOUR 4GB LAPTOP)
+# -----------------------------------------------------------------------------
+resources:
+  requests:
+    memory: "100Mi"    # Baseline memory footprint
+    cpu: "100m"        # 1/10th of a CPU core
+  limits:
+    memory: "200Mi"    # Hard kill-switch if the Python script leaks memory
+    cpu: "250m"        # 1/4th of a CPU core maximum
+
+# -----------------------------------------------------------------------------
+# KUBERNETES NETWORKING (Boilerplate)
+# Kept here so Helm doesn't throw a "nil pointer" error on older templates
+# -----------------------------------------------------------------------------
+#
+#
+#
+
+image:
+  agent:
+    repository: "si3mshady/fde-research-agent"
+    tag: "latest"
+  ui:
+    repository: "si3mshady/fde-research-ui"
+    tag: "latest"
+  pullPolicy: Always
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: false
+
+httpRoute:
+  enabled: false
