@@ -1,0 +1,61 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ .Release.Name }}-agent
+  labels:
+    app: {{ .Release.Name }}
+spec:
+  schedule: "*/10 * * * *"  # Runs the pipeline every 10 minutes. Adjust as needed.
+  concurrencyPolicy: Forbid   # Prevents two workers from running at the exact same time
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: {{ .Release.Name }}
+        spec:
+          restartPolicy: OnFailure
+          
+          # --- FIX 1: SOLVE SQLITE PERMISSION LOCKOUTS ---
+          initContainers:
+          - name: fix-db-permissions
+            image: busybox:latest
+            command: ["sh", "-c", "chmod 777 /app/data"]
+            volumeMounts:
+            - name: shared-db
+              mountPath: /app/data
+
+          # --- FIX 2: RUN WORKER AS A PROPER BATCH JOB ---
+          containers:
+          - name: research-agent
+            image: "{{ .Values.image.agent.repository }}:{{ .Values.image.agent.tag }}"
+            imagePullPolicy: {{ .Values.image.pullPolicy }}
+
+            resources:
+              requests:
+                memory: "100Mi"
+                cpu: "100m"
+              limits:
+                memory: "200Mi"
+                cpu: "250m"
+
+            # INJECTS THE DYNAMIC TENANT ARRAY AS JSON FOR THE WORKER
+            env:
+            - name: TENANTS_JSON
+              value: {{ .Values.tenants | toJson | quote }}
+
+            # CONFIGURATION: Injects remaining plain environment variables
+            envFrom:
+            - configMapRef:
+                name: {{ .Release.Name }}-config
+
+            # STORAGE: Connects to the host-shared SQLite database
+            volumeMounts:
+            - name: shared-db
+              mountPath: /app/data
+
+          volumes:
+          - name: shared-db
+            hostPath:
+              path: /tmp/fde_data
+              type: DirectoryOrCreate
