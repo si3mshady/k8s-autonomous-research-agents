@@ -35,7 +35,7 @@ st.markdown("""
 st.title("🌐 Multi-Tenant Research Operational Control Plane")
 st.caption("Synchronized GitOps Core Engine — Active AI Agent Monitoring")
 
-# --- DATA LAYER (No caching to ensure real-time disk reads) ---
+# --- DATA LAYER ---
 def load_data():
     if not os.path.exists(DB_PATH):
         st.error(f"🔴 DATABASE MISSING: The UI container cannot find any file at `{DB_PATH}`. Check your Kubernetes volume mounts.")
@@ -56,7 +56,12 @@ def load_data():
                 st.warning("⚠️ TABLE MISSING: The database exists, but the `tenant_research_leads` table has not been created yet.")
                 return pd.DataFrame()
 
+            # Query all data ordered by newest first
             df = pd.read_sql_query("SELECT * FROM tenant_research_leads ORDER BY extracted_at DESC", conn)
+            
+            # Failsafe: Deduplicate at the Pandas layer to ensure only the absolute freshest payload per topic/tenant is kept
+            df = df.drop_duplicates(subset=['tenant_id', 'research_topic'], keep='first')
+            
             return df
             
     except sqlite3.OperationalError as e:
@@ -110,39 +115,49 @@ else:
     st.subheader(f"📋 Live Intelligence Matrix: {selected_target}")
 
     # --- MAIN CONTENT STREAM ---
-    for _, row in view_df.iterrows():
-        with st.container(border=True):
-            header_col, meta_col = st.columns([3, 1])
-            
-            with header_col:
-                st.markdown(f"### 🎯 {row.get('lead_name', 'Unknown Opportunity')}")
-                st.markdown(f"**Tenant Domain ID:** `{row.get('tenant_id', 'N/A')}` | **Asset Topic:** *{row.get('research_topic', 'N/A')}*")
-            
-            with meta_col:
+    if view_df.empty:
+        st.info(f"No active intelligence gathered for {selected_target} at this time. Pipeline is standing by.")
+    else:
+        for _, row in view_df.iterrows():
+            with st.container(border=True):
+                header_col, meta_col = st.columns([3, 1])
+                
+                with header_col:
+                    st.markdown(f"### 🎯 {row.get('lead_name', 'Unknown Opportunity')}")
+                    st.markdown(f"**Tenant Domain ID:** `{row.get('tenant_id', 'N/A')}` | **Asset Topic:** *{row.get('research_topic', 'N/A')}*")
+                
+                with meta_col:
+                    # Conditional Formatting Logic
+                    deadline_str = str(row.get('deadline_or_milestone', 'Pending'))
+                    deadline_color = "#ff6b6b" if "1 week" in deadline_str.lower() else "#66fcf1"
+                    
+                    value_str = str(row.get('estimated_value', 'Under Evaluation'))
+                    value_color = "#a8b2bd" if "under evaluation" in value_str.lower() else "#66fcf1"
+                    
+                    st.markdown(f"""
+                        <div style="background-color: #1f2833; padding: 0.75rem; border-radius: 0.25rem; border: 1px solid #45a29e; text-align: center;">
+                            <div style="font-size: 0.65rem; color: #a8b2bd; text-transform: uppercase;">Value Projection</div>
+                            <div style="font-size: 1.2rem; color: {value_color}; font-weight: bold;">{value_str}</div>
+                        </div>
+                        <div style="margin-top: 0.5rem; font-size: 0.85rem; color: {deadline_color}; text-align: center; font-weight: bold;">
+                            ⏱️ {deadline_str}
+                        </div>
+                    """, unsafe_allow_html=True)
+
+                st.markdown(f"**Strategic Executive Summary:** {row.get('summary', 'No summary provided.')}")
+                
+                # Formatted LLM Scratchpad Integration
                 st.markdown(f"""
-                    <div style="background-color: #1f2833; padding: 0.75rem; border-radius: 0.25rem; border: 1px solid #45a29e; text-align: center;">
-                        <div style="font-size: 0.65rem; color: #a8b2bd; text-transform: uppercase;">Value Projection</div>
-                        <div style="font-size: 1.2rem; color: #66fcf1; font-weight: bold;">{row.get('estimated_value', 'Under Evaluation')}</div>
-                    </div>
-                    <div style="margin-top: 0.5rem; font-size: 0.85rem; color: #66fcf1; text-align: center; font-weight: bold;">
-                        ⏱️ {row.get('deadline_or_milestone', 'Pending')}
+                    <div class="scratchpad">
+                        <div class="scratchpad-header">💡 LLM Live Scratchpad — Non-Profit Core Alignment Analysis</div>
+                        <div style="font-size: 0.95rem; line-height: 1.5; color: #c5c6c7;">{row.get('actionable_plan', 'Awaiting alignment analysis.')}</div>
                     </div>
                 """, unsafe_allow_html=True)
-
-            st.markdown(f"**Strategic Executive Summary:** {row.get('summary', 'No summary provided.')}")
-            
-            # Formatted LLM Scratchpad Integration
-            st.markdown(f"""
-                <div class="scratchpad">
-                    <div class="scratchpad-header">💡 LLM Live Scratchpad — Non-Profit Core Alignment Analysis</div>
-                    <div style="font-size: 0.95rem; line-height: 1.5; color: #c5c6c7;">{row.get('actionable_plan', 'Awaiting alignment analysis.')}</div>
-                </div>
-            """, unsafe_allow_html=True)
-            
-            with st.expander("🔍 Examine Raw Natural Tavily Payload"):
-                st.caption(f"Payload Sync Timestamp: {row.get('extracted_at', 'Unknown Time')}")
-                raw_payload = row.get('raw_payload', '{}')
-                try:
-                    st.json(json.loads(raw_payload))
-                except Exception:
-                    st.code(raw_payload, language='json')
+                
+                with st.expander("🔍 Examine Raw Natural Tavily Payload"):
+                    st.caption(f"Payload Sync Timestamp: {row.get('extracted_at', 'Unknown Time')}")
+                    raw_payload = row.get('raw_payload', '{}')
+                    try:
+                        st.json(json.loads(raw_payload))
+                    except Exception:
+                        st.code(raw_payload, language='json')
