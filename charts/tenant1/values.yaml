@@ -12,7 +12,7 @@ tenants:
 # -----------------------------------------------------------------------------
 env:
   # Your Tavily API key for web search capabilities
-  tavilyApiKey: "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"
+  tavilyApiKey: ""
   
   # The endpoint for your locally hosted Ollama model.
   # Use http://host.docker.internal:11434 if using Docker Desktop / K3d on Mac/Windows
