@@ -26,6 +26,7 @@ except Exception as json_err:
 def init_db():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
+    # Added UNIQUE constraint to prevent duplicate entries per tenant/topic pairing
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS tenant_research_leads (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -38,7 +39,8 @@ def init_db():
             summary TEXT,
             actionable_plan TEXT,
             raw_payload TEXT,
-            extracted_at TEXT
+            extracted_at TEXT,
+            UNIQUE(tenant_id, research_topic)
         )
     """)
     conn.commit()
@@ -72,6 +74,20 @@ def query_tavily(query: str):
         print(f"   EXCEPTION: Network failure during Tavily call: {e}")
     return []
 
+def clean_llm_json_output(raw_content: str) -> dict:
+    """Strips markdown code blocks from LLM output to prevent JSON parsing errors."""
+    cleaned_content = raw_content.strip()
+    
+    if cleaned_content.startswith("```json"):
+        cleaned_content = cleaned_content[7:]
+    elif cleaned_content.startswith("```"):
+        cleaned_content = cleaned_content[3:]
+        
+    if cleaned_content.endswith("```"):
+        cleaned_content = cleaned_content[:-3]
+        
+    return json.loads(cleaned_content.strip())
+
 def synthesize_with_llm(tenant_name, topic, raw_payload_str):
     """Uses native Ollama JSON mode to safely guarantee output structure."""
     llm = ChatOllama(
@@ -100,7 +116,7 @@ def synthesize_with_llm(tenant_name, topic, raw_payload_str):
 
     try:
         response = llm.invoke(system_prompt)
-        parsed_data = json.loads(response.content.strip())
+        parsed_data = clean_llm_json_output(response.content)
         return parsed_data
     except Exception as e:
         print(f"LLM Processing Exception, generating safe fallback: {e}")
@@ -135,10 +151,20 @@ def run_pipeline_cycle():
         raw_payload_string = json.dumps(combined_results)
         intelligence = synthesize_with_llm(tenant['name'], tenant['topic'], raw_payload_string)
 
+        # Implemented UPSERT logic via ON CONFLICT to avoid duplicate row stacking
         cursor.execute("""
             INSERT INTO tenant_research_leads 
             (tenant_id, company_name, research_topic, lead_name, estimated_value, deadline_or_milestone, summary, actionable_plan, raw_payload, extracted_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(tenant_id, research_topic) DO UPDATE SET
+                company_name=excluded.company_name,
+                lead_name=excluded.lead_name,
+                estimated_value=excluded.estimated_value,
+                deadline_or_milestone=excluded.deadline_or_milestone,
+                summary=excluded.summary,
+                actionable_plan=excluded.actionable_plan,
+                raw_payload=excluded.raw_payload,
+                extracted_at=excluded.extracted_at
         """, (
             tenant['id'],
             tenant['name'],
