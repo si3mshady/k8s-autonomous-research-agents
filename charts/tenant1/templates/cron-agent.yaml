@@ -5,7 +5,7 @@ metadata:
   labels:
     app: {{ .Release.Name }}
 spec:
-  schedule: "*/10 * * * *"  # Runs the pipeline every 10 minutes. Adjust as needed.
+  schedule: "*/3 * * * *"  # Runs the pipeline every 3 minutes. Adjust as needed.
   concurrencyPolicy: Forbid   # Prevents two workers from running at the exact same time
   jobTemplate:
     spec:

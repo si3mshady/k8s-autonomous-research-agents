@@ -3,9 +3,9 @@
 # This section defines who the agent works for and what it is looking for.
 # -----------------------------------------------------------------------------
 tenants:
-  - id: "stem-shady-llc"
-    name: "STEMshady LLC"
-    topic: "Name grants for drone STEM education."
+  - id: "arnold-ai-education-foundation"
+    name: "Arnold AI Education Foundation"
+    topic: "Find grants for AI literacy and STEM education programs serving underserved communities."
     systemPrompt: "You are a strict data extractor. Analyze t:he provided text. Return ONLY the name of ONE grant and a single-sentence summary. Do not output anything else. Maximum length: 30 words."
 # -----------------------------------------------------------------------------
 # ENVIRONMENT & API CONNECTIONS
